@@ -23,6 +23,8 @@ github.com/sf9v/mira v0.0.0-20200915071822-32044ca9f4d3 h1:yHUF1fQZ8waorA+hZrZHf
 github.com/sf9v/mira v0.0.0-20200915071822-32044ca9f4d3/go.mod h1:zeNW4eWcS+HUH99UqwRG7qGFkyD9uvrKOMPExqKjAc0=
 github.com/sf9v/nero v0.0.0-20201210025914-93d95683b425 h1:9LOwAoquhdnHc3fkaZlSGEO0U7Wmr72LTNjCiw3m/pM=
 github.com/sf9v/nero v0.0.0-20201210025914-93d95683b425/go.mod h1:olZWc00O5qae58A2zIUNiksUL5YQfqCM/h5LTkwLdOI=
+github.com/sf9v/nero v0.1.0 h1:FKmPsW4Hpda8x/nqlVKyjYu00QWYLbkDcUl1PUBWXEg=
+github.com/sf9v/nero v0.1.0/go.mod h1:olZWc00O5qae58A2zIUNiksUL5YQfqCM/h5LTkwLdOI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
