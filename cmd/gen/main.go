@@ -10,12 +10,12 @@ import (
 )
 
 func main() {
-	files, err := gen.Generate(new(model.Product))
+	files, err := gen.Generate((model.Product{}).Schema())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	basePath := "repository"
+	basePath := "productrepo"
 	err = os.Mkdir(basePath, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)

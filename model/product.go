@@ -15,15 +15,18 @@ type Product struct {
 }
 
 // Schema implements nero.Schemaer
-func (p *Product) Schema() *nero.Schema {
-	return &nero.Schema{
-		Pkg:        "repository",
-		Collection: "products",
-		Columns: []*nero.Column{
-			nero.NewColumn("id", p.ID).StructField("ID").Ident().Auto(),
-			nero.NewColumn("name", p.Name),
-			nero.NewColumn("created_at", p.CreatedAt).Auto(),
-			nero.NewColumn("updated_at", p.UpdatedAt),
-		},
-	}
+func (p Product) Schema() *nero.Schema {
+	return nero.NewSchemaBuilder(&p).
+		PkgName("productrepo").
+		Collection("products").
+		Identity(
+			nero.NewColumnBuilder("id", p.ID).
+				StructField("ID").Auto().Build(),
+		).
+		Columns(
+			nero.NewColumnBuilder("name", p.Name).Build(),
+			nero.NewColumnBuilder("created_at", p.CreatedAt).Auto().Build(),
+			nero.NewColumnBuilder("updated_at", p.UpdatedAt).Build(),
+		).
+		Build()
 }

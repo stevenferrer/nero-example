@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/sf9v/nero-example/repository"
+	"github.com/sf9v/nero-example/productrepo"
 )
 
 func main() {
@@ -36,23 +36,23 @@ func main() {
 		}
 	}()
 
-	repo := repository.NewPostgresRepository(db).Debug()
+	productRepo := productrepo.NewPostgresRepository(db).Debug()
 	ctx := context.Background()
 	// create product 1
-	product1ID, err := repo.Create(ctx, repository.NewCreator().Name("Product 1"))
+	product1ID, err := productRepo.Create(ctx, productrepo.NewCreator().Name("Product 1"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// create product 2
-	_, err = repo.Create(ctx, repository.NewCreator().Name("Product 2"))
+	_, err = productRepo.Create(ctx, productrepo.NewCreator().Name("Product 2"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// query product 1
-	product1, err := repo.QueryOne(ctx, repository.NewQueryer().
-		Where(repository.IDEq(product1ID)))
+	product1, err := productRepo.QueryOne(ctx, productrepo.NewQueryer().
+		Where(productrepo.IDEq(product1ID)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,16 +61,16 @@ func main() {
 
 	// update product 1
 	now := time.Now()
-	_, err = repo.Update(ctx, repository.NewUpdater().
+	_, err = productRepo.Update(ctx, productrepo.NewUpdater().
 		Name("Updated Product 1").UpdatedAt(&now).
-		Where(repository.IDEq(product1ID)))
+		Where(productrepo.IDEq(product1ID)))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// query product 1 again
-	product1, err = repo.QueryOne(ctx, repository.
-		NewQueryer().Where(repository.IDEq(product1ID)))
+	product1, err = productRepo.QueryOne(ctx, productrepo.
+		NewQueryer().Where(productrepo.IDEq(product1ID)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,14 +78,14 @@ func main() {
 	fmt.Printf("%#v\n", product1)
 
 	// delete product 1
-	_, err = repo.Delete(ctx, repository.NewDeleter().
-		Where(repository.IDEq(product1ID)))
+	_, err = productRepo.Delete(ctx, productrepo.NewDeleter().
+		Where(productrepo.IDEq(product1ID)))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// query remaining products
-	products, err := repo.Query(ctx, repository.NewQueryer().Limit(10))
+	products, err := productRepo.Query(ctx, productrepo.NewQueryer().Limit(10))
 	if err != nil {
 		log.Fatal(err)
 	}
