@@ -1,6 +1,6 @@
 # nero-example
 
-This repository showcases the basic usage of [nero](https://github.com/sf9v/nero), a library for generating the repository (pattern) layer.
+This repository showcases the basic usage of [nero](https://github.com/stevenferrer/nero), a library for generating the repository (pattern) layer.
 
 ## cmd/generate
 

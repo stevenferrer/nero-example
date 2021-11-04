@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/sf9v/nero/gen"
+	"github.com/stevenferrer/nero/gen"
 
-	"github.com/sf9v/nero-example/model"
+	"github.com/stevenferrer/nero-example/model"
 )
 
 func main() {

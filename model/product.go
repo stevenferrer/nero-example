@@ -1,32 +1,32 @@
 package model
 
 import (
-	"time"
-
-	"github.com/sf9v/nero"
+	"github.com/stevenferrer/nero"
 )
 
 // Product is a product model
 type Product struct {
 	ID        int64
 	Name      string
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	CreatedAt string
+	UpdatedAt *string
 }
 
 // Schema implements nero.Schemaer
 func (p Product) Schema() *nero.Schema {
 	return nero.NewSchemaBuilder(&p).
 		PkgName("productrepo").
-		Collection("products").
+		Table("products").
 		Identity(
-			nero.NewColumnBuilder("id", p.ID).
+			nero.NewFieldBuilder("id", p.ID).
 				StructField("ID").Auto().Build(),
 		).
-		Columns(
-			nero.NewColumnBuilder("name", p.Name).Build(),
-			nero.NewColumnBuilder("created_at", p.CreatedAt).Auto().Build(),
-			nero.NewColumnBuilder("updated_at", p.UpdatedAt).Build(),
+		Fields(
+			nero.NewFieldBuilder("name", p.Name).Build(),
+			nero.NewFieldBuilder("created_at", p.CreatedAt).Build(),
+			nero.NewFieldBuilder("updated_at", p.UpdatedAt).
+				Optional().Build(),
 		).
+		Templates(nero.NewSQLiteTemplate()).
 		Build()
 }

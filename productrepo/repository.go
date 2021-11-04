@@ -4,52 +4,56 @@ package productrepo
 import (
 	"context"
 	"reflect"
-	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sf9v/nero"
-	"github.com/sf9v/nero-example/model"
+	"github.com/stevenferrer/nero"
+	"github.com/stevenferrer/nero-example/model"
+	"github.com/stevenferrer/nero/aggregate"
+	"github.com/stevenferrer/nero/comparison"
+	"github.com/stevenferrer/nero/sort"
 )
 
-// Repository is an interface for interacting with a Product repository
+// Repository is an interface that provides the methods
+// for interacting with a Product repository
 type Repository interface {
-	// Tx begins a new transaction
-	Tx(context.Context) (nero.Tx, error)
+	// BeginTx starts a transaction
+	BeginTx(context.Context) (nero.Tx, error)
 	// Create creates a Product
 	Create(context.Context, *Creator) (id int64, err error)
-	// CreateTx creates a Product in a transaction
-	CreateTx(context.Context, nero.Tx, *Creator) (id int64, err error)
+	// CreateInTx creates a Product in a transaction
+	CreateInTx(context.Context, nero.Tx, *Creator) (id int64, err error)
 	// CreateMany batch creates Products
 	CreateMany(context.Context, ...*Creator) error
-	// CreateManyTx batch creates Products in a transaction
-	CreateManyTx(context.Context, nero.Tx, ...*Creator) error
+	// CreateManyInTx batch creates Products in a transaction
+	CreateManyInTx(context.Context, nero.Tx, ...*Creator) error
 	// Query queries Products
 	Query(context.Context, *Queryer) ([]*model.Product, error)
 	// QueryTx queries Products in a transaction
-	QueryTx(context.Context, nero.Tx, *Queryer) ([]*model.Product, error)
+	QueryInTx(context.Context, nero.Tx, *Queryer) ([]*model.Product, error)
 	// QueryOne queries a Product
 	QueryOne(context.Context, *Queryer) (*model.Product, error)
 	// QueryOneTx queries a Product in a transaction
-	QueryOneTx(context.Context, nero.Tx, *Queryer) (*model.Product, error)
+	QueryOneInTx(context.Context, nero.Tx, *Queryer) (*model.Product, error)
 	// Update updates a Product or many Products
 	Update(context.Context, *Updater) (rowsAffected int64, err error)
 	// UpdateTx updates a Product many Products in a transaction
-	UpdateTx(context.Context, nero.Tx, *Updater) (rowsAffected int64, err error)
+	UpdateInTx(context.Context, nero.Tx, *Updater) (rowsAffected int64, err error)
 	// Delete deletes a Product or many Products
 	Delete(context.Context, *Deleter) (rowsAffected int64, err error)
 	// Delete deletes a Product or many Products in a transaction
-	DeleteTx(context.Context, nero.Tx, *Deleter) (rowsAffected int64, err error)
-	// Aggregate runs an aggregate query
+	DeleteInTx(context.Context, nero.Tx, *Deleter) (rowsAffected int64, err error)
+	// Aggregate performs an aggregate query
 	Aggregate(context.Context, *Aggregator) error
-	// Aggregate runs an aggregate query in a transaction
-	AggregateTx(context.Context, nero.Tx, *Aggregator) error
+	// Aggregate performs an aggregate query in a transaction
+	AggregateInTx(context.Context, nero.Tx, *Aggregator) error
 }
 
 // Creator is a create builder
 type Creator struct {
 	name      string
-	updatedAt *time.Time
+	createdAt string
+	updatedAt *string
 }
 
 // NewCreator returns a Creator
@@ -63,8 +67,14 @@ func (c *Creator) Name(name string) *Creator {
 	return c
 }
 
+// CreatedAt sets the CreatedAt field
+func (c *Creator) CreatedAt(createdAt string) *Creator {
+	c.createdAt = createdAt
+	return c
+}
+
 // UpdatedAt sets the UpdatedAt field
-func (c *Creator) UpdatedAt(updatedAt *time.Time) *Creator {
+func (c *Creator) UpdatedAt(updatedAt *string) *Creator {
 	c.updatedAt = updatedAt
 	return c
 }
@@ -76,8 +86,8 @@ func (c *Creator) Validate() error {
 		err = multierror.Append(err, nero.NewErrRequiredField("name"))
 	}
 
-	if isZero(c.updatedAt) {
-		err = multierror.Append(err, nero.NewErrRequiredField("updated_at"))
+	if isZero(c.createdAt) {
+		err = multierror.Append(err, nero.NewErrRequiredField("created_at"))
 	}
 
 	return err
@@ -85,10 +95,10 @@ func (c *Creator) Validate() error {
 
 // Queryer is a query builder
 type Queryer struct {
-	limit  uint
-	offset uint
-	pfs    []PredFunc
-	sfs    []SortFunc
+	limit     uint
+	offset    uint
+	predFuncs []comparison.PredFunc
+	sortFuncs []sort.SortFunc
 }
 
 // NewQueryer returns a Queryer
@@ -97,14 +107,14 @@ func NewQueryer() *Queryer {
 }
 
 // Where applies predicates
-func (q *Queryer) Where(pfs ...PredFunc) *Queryer {
-	q.pfs = append(q.pfs, pfs...)
+func (q *Queryer) Where(predFuncs ...comparison.PredFunc) *Queryer {
+	q.predFuncs = append(q.predFuncs, predFuncs...)
 	return q
 }
 
 // Sort applies sorting expressions
-func (q *Queryer) Sort(sfs ...SortFunc) *Queryer {
-	q.sfs = append(q.sfs, sfs...)
+func (q *Queryer) Sort(sortFuncs ...sort.SortFunc) *Queryer {
+	q.sortFuncs = append(q.sortFuncs, sortFuncs...)
 	return q
 }
 
@@ -123,8 +133,9 @@ func (q *Queryer) Offset(offset uint) *Queryer {
 // Updater is an update builder
 type Updater struct {
 	name      string
-	updatedAt *time.Time
-	pfs       []PredFunc
+	createdAt string
+	updatedAt *string
+	predFuncs []comparison.PredFunc
 }
 
 // NewUpdater returns an Updater
@@ -138,21 +149,27 @@ func (c *Updater) Name(name string) *Updater {
 	return c
 }
 
+// CreatedAt sets the CreatedAt field
+func (c *Updater) CreatedAt(createdAt string) *Updater {
+	c.createdAt = createdAt
+	return c
+}
+
 // UpdatedAt sets the UpdatedAt field
-func (c *Updater) UpdatedAt(updatedAt *time.Time) *Updater {
+func (c *Updater) UpdatedAt(updatedAt *string) *Updater {
 	c.updatedAt = updatedAt
 	return c
 }
 
 // Where applies predicates
-func (u *Updater) Where(pfs ...PredFunc) *Updater {
-	u.pfs = append(u.pfs, pfs...)
+func (u *Updater) Where(predFuncs ...comparison.PredFunc) *Updater {
+	u.predFuncs = append(u.predFuncs, predFuncs...)
 	return u
 }
 
 // Deleter is a delete builder
 type Deleter struct {
-	pfs []PredFunc
+	predFuncs []comparison.PredFunc
 }
 
 // NewDeleter returns a Deleter
@@ -161,18 +178,18 @@ func NewDeleter() *Deleter {
 }
 
 // Where applies predicates
-func (d *Deleter) Where(pfs ...PredFunc) *Deleter {
-	d.pfs = append(d.pfs, pfs...)
+func (d *Deleter) Where(predFuncs ...comparison.PredFunc) *Deleter {
+	d.predFuncs = append(d.predFuncs, predFuncs...)
 	return d
 }
 
 // Aggregator is an aggregate query builder
 type Aggregator struct {
-	v      interface{}
-	aggfs  []AggFunc
-	pfs    []PredFunc
-	sfs    []SortFunc
-	groups []Column
+	v         interface{}
+	aggFuncs  []aggregate.AggFunc
+	predFuncs []comparison.PredFunc
+	sortFuncs []sort.SortFunc
+	groupBys  []Field
 }
 
 // NewAggregator expects a v and returns an Aggregator
@@ -182,26 +199,26 @@ func NewAggregator(v interface{}) *Aggregator {
 }
 
 // Aggregate applies aggregate functions
-func (a *Aggregator) Aggregate(aggfs ...AggFunc) *Aggregator {
-	a.aggfs = append(a.aggfs, aggfs...)
+func (a *Aggregator) Aggregate(aggFuncs ...aggregate.AggFunc) *Aggregator {
+	a.aggFuncs = append(a.aggFuncs, aggFuncs...)
 	return a
 }
 
 // Where applies predicates
-func (a *Aggregator) Where(pfs ...PredFunc) *Aggregator {
-	a.pfs = append(a.pfs, pfs...)
+func (a *Aggregator) Where(predFuncs ...comparison.PredFunc) *Aggregator {
+	a.predFuncs = append(a.predFuncs, predFuncs...)
 	return a
 }
 
 // Sort applies sorting expressions
-func (a *Aggregator) Sort(sfs ...SortFunc) *Aggregator {
-	a.sfs = append(a.sfs, sfs...)
+func (a *Aggregator) Sort(sortFuncs ...sort.SortFunc) *Aggregator {
+	a.sortFuncs = append(a.sortFuncs, sortFuncs...)
 	return a
 }
 
 // Group applies group clauses
-func (a *Aggregator) Group(cols ...Column) *Aggregator {
-	a.groups = append(a.groups, cols...)
+func (a *Aggregator) GroupBy(fields ...Field) *Aggregator {
+	a.groupBys = append(a.groupBys, fields...)
 	return a
 }
 
